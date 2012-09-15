@@ -53,6 +53,12 @@ var animations={
     ]   
 };
 
+var SELECT=0;
+var PLACE=1;
+var MOVE=2;
+
+var mode=SELECT;
+
 function initBackground(stage)
 {
     var background=new Kinetic.Layer();
@@ -68,6 +74,66 @@ function initBackground(stage)
     background.add(rect);
 
     stage.add(background);
+}
+
+function pieceClicked()
+{
+    console.log('clicked piece');
+    console.log(this);           
+    
+    mode=PLACE;
+}
+
+function tileClicked(this)
+{
+    console.log('clicked');
+    console.log(this);
+    
+    if(mode==PLACE)
+    {
+        placePiece(this);
+    }
+    else if(mode==MOVE)
+    {
+        movePiece(this);
+    }
+}
+
+function placePiece()
+{
+}
+
+function movePiece(this)
+{
+    this.setFill('blue');
+    board.draw();
+    
+    var actor=actorObjects[0];
+    var xpos=this.attrs.x;
+    var ypos=this.attrs.y;
+    
+    console.log('moving '+xpos+' '+ypos+' '+actor);
+    
+    /*
+    var anim=new Kinetic.Animation({
+        func: function(frame) {                    
+            actor.setX(xpos);
+            actor.setY(ypos);
+        },
+        node: actors,
+    });
+    
+    anim.start();
+    */
+    
+    actor.attrs.hexX=this.attrs.hexX;
+    actor.attrs.hexY=this.attrs.hexY;
+    
+    actor.transitionTo({
+        x: xpos,
+        y: ypos,
+        duration: 0.5, 
+    });
 }
 
 function initBoard(stage)
@@ -108,40 +174,8 @@ function initBoard(stage)
                 stroke: 'gray',
                 strokeWidth: 2,
             });    
-            tile.on('click', function() {
-                console.log('clicked');
-                console.log(this);
-                
-                this.setFill('blue');
-                board.draw();
-
-                var actor=actorObjects[0];
-                var xpos=this.attrs.x;
-                var ypos=this.attrs.y;
-                
-                console.log('moving '+xpos+' '+ypos+' '+actor);
-                
-                /*
-                var anim=new Kinetic.Animation({
-                    func: function(frame) {                    
-                        actor.setX(xpos);
-                        actor.setY(ypos);
-                    },
-                    node: actors,
-                });
-                
-                anim.start();
-                */
-                
-                actor.attrs.hexX=this.attrs.hexX;
-                actor.attrs.hexY=this.attrs.hexY;
-                
-                actor.transitionTo({
-                    x: xpos,
-                    y: ypos,
-                    duration: 0.5, 
-                });
-            });
+            
+            tile.on('click', tileClicked);
             board.add(tile);
         }
         
@@ -181,17 +215,7 @@ function initPieces(stage, images)
             frameRate: 10,
         });
     
-    /*
-       player.on('click', function() {
-           console.log('clicked actor');
-           console.log(this);
-           
-           var x=this.attrs.hexX;
-           var y=this.attrs.hexY;
-           
-           log('I am at '+x+' '+y);
-        });                
-    */
+        charObj.on('click', pieceClicked);                
     
         charObj.setAnimation('bounce');
     
@@ -207,19 +231,6 @@ function initPieces(stage, images)
 function initActors(stage, images)
 {
    actors=new Kinetic.Layer();
-    
-/*
-   var player=new Kinetic.Circle({
-       hexX: 0,
-       hexY: 0,
-       x: 240,
-       y: 240,
-       radius: hexSize/2,
-       fill: 'blue',
-       stroke: 'gray',
-       strokeWidth: 2,
-   });
-*/
 
     var animations={
         bounce: [
@@ -297,6 +308,8 @@ function initStage(images, audio)
 
 function initLumpySpaceChess()
 {
+    mode=SELECT;
+
     var images={
         jake: 'assets/jake.png',
         finn: 'assets/fin.png',
