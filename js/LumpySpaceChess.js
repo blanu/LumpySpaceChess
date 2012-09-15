@@ -4,6 +4,7 @@ var hexSize=50;
 var actors;
 var actorObjects=[];
 
+var board;
 var boardObjects=[];
 
 var pieces;
@@ -21,6 +22,14 @@ var characters={
     lsp: {
         x: 0,
         y: 200,        
+    },
+    snail: {
+        x: 0,
+        y: 300,
+    },
+    bmo: {
+        x: 0,
+        y: 400,
     },
 }
 
@@ -59,6 +68,10 @@ var MOVE=2;
 
 var mode=SELECT;
 
+var selected=null;
+
+var offsets=[];
+
 function initBackground(stage)
 {
     var background=new Kinetic.Layer();
@@ -78,15 +91,16 @@ function initBackground(stage)
 
 function pieceClicked()
 {
-    console.log('clicked piece');
+    console.log('piece clicked');
     console.log(this);           
     
     mode=PLACE;
+    selected=this;
 }
 
-function tileClicked(this)
+function tileClicked()
 {
-    console.log('clicked');
+    console.log('tile clicked');
     console.log(this);
     
     if(mode==PLACE)
@@ -99,70 +113,151 @@ function tileClicked(this)
     }
 }
 
-function placePiece()
+function actorClicked()
 {
+    console.log('clicked actor');
+    console.log(this);
+    
+    var x=this.attrs.hexX;
+    var y=this.attrs.hexY;
+    
+    console.log('I am at '+x+' '+y);
+    
+    mode=MOVE;
+    selected=this;
 }
 
-function movePiece(this)
+function placePiece(tile)
 {
-    this.setFill('blue');
+    console.log('placePiece');
+    
+    if(selected==null)
+    {
+        return;
+    }
+    
+    console.log(selected);
+    console.log(tile);
+    
+    var xpos=tile.attrs.hexX;
+    var ypos=tile.attrs.hexY;
+    
+    var x=calculateActorX(xpos, ypos);
+    var y=calculateActorY(ypos);
+    
+    var actor=new Kinetic.Sprite({
+        hexX: xpos,
+        hexY: ypos,
+        x: x,
+        y: y,
+        image: selected.attrs.image,
+        animations: animations,
+        animation: 'bounce',
+        frameRate: 10,
+    });
+
+   actor.on('click', actorClicked);                
+
+   actors.add(actor);
+   actorObjects.push(actor);   
+
+    console.log('actor:');
+    console.log(actor);
+    
+    actor.setAnimation('bounce');
+    actor.start();   
+    
+    selected=null;
+}
+
+function movePiece(piece)
+{
+    console.log('movePiece');
+    console.log(selected);
+    
+    if(selected==null)
+    {
+        return;
+    }    
+    
+    piece.setFill('blue');
     board.draw();
     
-    var actor=actorObjects[0];
-    var xpos=this.attrs.x;
-    var ypos=this.attrs.y;
+    var xpos=piece.attrs.hexX;
+    var ypos=piece.attrs.hexY;
     
-    console.log('moving '+xpos+' '+ypos+' '+actor);
+    var x=calculateActorX(xpos, ypos);
+    var y=calculateActorY(ypos);
     
-    /*
-    var anim=new Kinetic.Animation({
-        func: function(frame) {                    
-            actor.setX(xpos);
-            actor.setY(ypos);
-        },
-        node: actors,
-    });
+    console.log('moving '+xpos+' '+ypos+' '+selected);
+        
+    selected.attrs.hexX=piece.attrs.hexX;
+    selected.attrs.hexY=piece.attrs.hexY;
     
-    anim.start();
-    */
-    
-    actor.attrs.hexX=this.attrs.hexX;
-    actor.attrs.hexY=this.attrs.hexY;
-    
-    actor.transitionTo({
-        x: xpos,
-        y: ypos,
+    selected.transitionTo({
+        x: x,
+        y: y,
         duration: 0.5, 
     });
 }
 
+function precalculateOffsets()
+{
+    offsets=[];
+    var offset=boardSize-1;
+    for(var y=0; y<boardSize*2-1; y++)
+    {    
+        offsets.push(offset);
+        if(y<boardSize/2)
+        {
+            offset--;
+        }
+        else if(y==boardSize || y==boardSize+1)
+        {
+        }
+        else
+        {
+        }                
+    }    
+}
+
+function calculateTileX(x, y)
+{
+    var offset=offsets[y];
+    return 50+(x*hexSize*1.8)+(((hexSize/2)*y*1.8))+(offset*hexSize*1.8);
+}
+
+function calculateTileY(y)
+{
+    return 50+(y*hexSize*1.6);
+}
+
+function calculateActorX(x, y)
+{
+    var xpos=calculateTileX(x, y);
+    return xpos-50;
+}
+
+function calculateActorY(y)
+{
+    var ypos=calculateTileY(y);
+    return ypos-90;
+}
+
 function initBoard(stage)
 {
-    var board=new Kinetic.Layer();
+    board=new Kinetic.Layer();
 
-    var offset=boardSize-1;
     var rowLength=boardSize;
     for(var y=0; y<boardSize*2-1; y++)
     {    
-        console.log('offset: '+offset);
         var boardRow=[];
         boardObjects.push(boardRow);
         for(var x=0; x<rowLength; x++)
         {                
-/*
-            if(y%2==0)
-            {
-                var xpos=50+((x+offset)*hexSize*1.8);
-            }
-            else
-            {
-                var xpos=50+((x+offset)*hexSize*1.8)+((hexSize/2)*1.8);                
-            }
-*/
-
-            var xpos=50+(x*hexSize*1.8)+(((hexSize/2)*y*1.8))+(offset*hexSize*1.8);
-
-            var ypos=50+(y*hexSize*1.6);
+            var xpos=calculateTileX(x, y);
+            var ypos=calculateTileY(y);
+            
             var tile=new Kinetic.RegularPolygon({
                 hexX: x,
                 hexY: y,
@@ -181,7 +276,6 @@ function initBoard(stage)
         
         if(y<boardSize/2)
         {
-            offset--;
             rowLength++;
         }
         else if(y==boardSize || y==boardSize+1)
@@ -190,7 +284,6 @@ function initBoard(stage)
         }
         else
         {
-//            offset++;
             rowLength--;
         }        
     }
@@ -231,65 +324,8 @@ function initPieces(stage, images)
 function initActors(stage, images)
 {
    actors=new Kinetic.Layer();
-
-    var animations={
-        bounce: [
-            {
-                x: 0,
-                y: 0,
-                width: 100,
-                height: 100,
-            },
-            {
-                x: 100,
-                y: 0,
-                width: 100,
-                height: 100,
-            },
-            {
-                x: 200,
-                y: 0,
-                width: 100,
-                height: 100,
-            },
-            {
-                x: 300,
-                y: 0,
-                width: 100,
-                height: 100,
-            },            
-        ]   
-    };
-
-    var player=new Kinetic.Sprite({
-        hexX: 0,
-        hexY: 0,
-        x: 240,
-        y: 240,
-        image: images.jake,
-        animations: animations,
-        animation: 'bounce',
-        frameRate: 10,
-    });
-
-   player.on('click', function() {
-       console.log('clicked actor');
-       console.log(this);
-       
-       var x=this.attrs.hexX;
-       var y=this.attrs.hexY;
-       
-       log('I am at '+x+' '+y);
-    });                
-
-    player.setAnimation('bounce');
-
-   actors.add(player);
-   actorObjects.push(player);   
     
-   stage.add(actors);
-   
-    player.start();   
+   stage.add(actors);   
 }
 
 function initStage(images, audio)
@@ -314,6 +350,8 @@ function initLumpySpaceChess()
         jake: 'assets/jake.png',
         finn: 'assets/fin.png',
         lsp: 'assets/LSP.png',
+        snail: 'assets/snail.png',
+        bmo: 'assets/Bmo.png',
     };
     
 /*
@@ -321,6 +359,8 @@ function initLumpySpaceChess()
         beach: 'beach.png',
     };
 */
+    
+    precalculateOffsets();
     
 //    loadAssets(images, audio, initStage);
     loadAssets(images, [], initStage);
