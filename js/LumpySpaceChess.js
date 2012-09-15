@@ -1,6 +1,8 @@
 var boardSize=3;
 var hexSize=50;
 
+var images;
+
 var actors;
 var actorObjects=[];
 
@@ -67,10 +69,23 @@ var PLACE=1;
 var MOVE=2;
 
 var mode=SELECT;
+var player=1;
 
 var selected=null;
 
 var offsets=[];
+
+function nextPlayer()
+{
+    if(player==1)
+    {
+        player=2;
+    }
+    else
+    {
+        player=1;
+    }
+}
 
 function initBackground(stage)
 {
@@ -167,10 +182,27 @@ function placePiece(tile)
     actor.setAnimation('bounce');
     actor.start();   
     
+    tile.attrs.player=player;
+    if(player==1)
+    {
+        console.log('tile:');
+        console.log(tile);
+        console.log(images.player1tile);
+        tile.setFill({image: images.player1tile, offset: [0,0]});
+    }
+    else
+    {
+        tile.setFill({image: images.player2tile, offset: [0,0]});
+    }
+    
+    board.draw();
+    
+    nextPlayer();
+    
     selected=null;
 }
 
-function movePiece(piece)
+function movePiece(tile)
 {
     console.log('movePiece');
     console.log(selected);
@@ -179,26 +211,43 @@ function movePiece(piece)
     {
         return;
     }    
+
+    if(player==1)    
+    {
+        tile.setFill({
+            image: images.player1tile,
+            offset: [0,0],
+        });
+    }
+    else
+    {
+        tile.setFill({
+            image: images.player2tile,
+            offset: [0,0],
+        });        
+    }
     
-    piece.setFill('blue');
     board.draw();
     
-    var xpos=piece.attrs.hexX;
-    var ypos=piece.attrs.hexY;
+    var xpos=tile.attrs.hexX;
+    var ypos=tile.attrs.hexY;
     
     var x=calculateActorX(xpos, ypos);
     var y=calculateActorY(ypos);
     
     console.log('moving '+xpos+' '+ypos+' '+selected);
         
-    selected.attrs.hexX=piece.attrs.hexX;
-    selected.attrs.hexY=piece.attrs.hexY;
+    selected.attrs.hexX=tile.attrs.hexX;
+    selected.attrs.hexY=tile.attrs.hexY;
     
     selected.transitionTo({
         x: x,
         y: y,
         duration: 0.5, 
     });
+    
+    selected=null;
+    nextPlayer();
 }
 
 function precalculateOffsets()
@@ -261,11 +310,15 @@ function initBoard(stage)
             var tile=new Kinetic.RegularPolygon({
                 hexX: x,
                 hexY: y,
+                player: 0,
                 x: xpos,
                 y: ypos,
                 sides: 6,
                 radius: hexSize,
-                fill: 'red',
+                fill: {
+                    image: images.defaultTile,
+                    offset: [0,0],
+                },
                 stroke: 'gray',
                 strokeWidth: 2,
             });    
@@ -291,7 +344,7 @@ function initBoard(stage)
     stage.add(board);    
 }
 
-function initPieces(stage, images)
+function initPieces(stage)
 {
    pieces=new Kinetic.Layer();
    
@@ -321,15 +374,17 @@ function initPieces(stage, images)
     }
 }
 
-function initActors(stage, images)
+function initActors(stage)
 {
    actors=new Kinetic.Layer();
     
    stage.add(actors);   
 }
 
-function initStage(images, audio)
+function initStage(imageAssets, audioAssets)
 {
+    images=imageAssets;
+
     var stage=new Kinetic.Stage({
         container: 'container',
         width: 640,
@@ -338,20 +393,23 @@ function initStage(images, audio)
 
     initBackground(stage);    
     initBoard(stage);
-    initPieces(stage, images);
-    initActors(stage, images);
+    initPieces(stage);
+    initActors(stage);
 } 
 
 function initLumpySpaceChess()
 {
     mode=SELECT;
 
-    var images={
+    var imageSources={
         jake: 'assets/jake.png',
         finn: 'assets/fin.png',
         lsp: 'assets/LSP.png',
         snail: 'assets/snail.png',
         bmo: 'assets/Bmo.png',
+        defaultTile: 'assets/tile.png',
+        player1tile: 'assets/player1tile.png',
+        player2tile: 'assets/player2tile.png',
     };
     
 /*
@@ -363,7 +421,7 @@ function initLumpySpaceChess()
     precalculateOffsets();
     
 //    loadAssets(images, audio, initStage);
-    loadAssets(images, [], initStage);
+    loadAssets(imageSources, [], initStage);
 }
 
 $(document).ready(initLumpySpaceChess);
