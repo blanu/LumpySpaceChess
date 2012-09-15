@@ -1,3 +1,6 @@
+var stageWidth=640;
+var stageHeight=480;
+
 var boardSize=3;
 var hexSize=50;
 
@@ -17,8 +20,12 @@ var characters={
         x: 0,
         y: 0,
         moves: [
-            [0,1],
+            [-1,-1],
+            [0,-1],           
+            [-1,0],
             [1,0],           
+            [1,1],
+            [0,1],           
         ],
     },
     finn: {
@@ -111,6 +118,8 @@ var selected=null;
 
 var offsets=[];
 
+var showedSelected=false;
+
 function nextPlayer()
 {
     if(player==1)
@@ -127,12 +136,13 @@ function initBackground(stage)
 {
     var background=new Kinetic.Layer();
     
-    var rect=new Kinetic.Rect({
+    var rect=new Kinetic.Image({
         x: 0,
         y: 0,
-        width: 640,
-        height: 480,
-        fill: 'black',
+        width: 1080,
+        height: 800,
+        scale: [0.8, 0.8],
+        image: images.background,
     });
     
     background.add(rect);
@@ -150,7 +160,10 @@ function pieceClicked()
 
 function tileClicked()
 {
-    console.log('tile clicked');
+    console.log('tile clicked '+this.attrs.hexX+' '+this.attrs.hexY);
+
+    console.log('redrawing');
+    redrawBoard();
     
     if(mode==PLACE)
     {
@@ -172,7 +185,30 @@ function actorClicked()
     mode=MOVE;
     selected=this;
     
+    showedSelected=false;
+    
     colorSelected(this);
+}
+
+function actorMouseover()
+{
+    console.log('actor mouseover');
+    showedSelected=true;
+    colorSelected(this);
+}
+
+function actorMouseout()
+{
+    console.log('actor mouseout');
+    
+    if(showedSelected)
+    {
+        if(selected!=this)
+        {
+            console.log('redrawing');
+            redrawBoard();
+        }
+    }
 }
 
 function placePiece(tile)
@@ -224,6 +260,8 @@ function placePiece(tile)
 */
     
    actor.on('click', actorClicked);                
+   actor.on('mouseover', actorMouseover);
+   actor.on('mouseout', actorMouseout);
 
    actors.add(actor);
    actorObjects.push(actor);   
@@ -240,39 +278,47 @@ function placePiece(tile)
     
     nextPlayer();
     
-    selected=null;
+    selected=null;    
 }
 
 function colorTile(actor, tile)
 {
-    console.log('colorTile: '+selected.attrs.player);
+    console.log('colorTile');
     console.log(actor);
     console.log(tile);
-    if(actor.attrs.player==1)
+    
+    if(actor==null)
     {
-        if(actor.attrs.king)
-        {
-            console.log('p1king');
-            tile.setFill({image: images.player1tileking, offset: [50,50]});    
-        }
-        else
-        {
-            console.log('p1');
-            tile.setFill({image: images.player1tile, offset: [0,0]});                
-        }
+        tile.setFill({image: images.defaultTile, offset: [50,50]});    
     }
     else
     {
-        if(actor.attrs.king)
+        if(actor.attrs.player==1)
         {
-            console.log('p2king');
-            tile.setFill({image: images.player2tileking, offset: [50,50]});    
+            if(actor.attrs.king)
+            {
+                console.log('p1king');
+                tile.setFill({image: images.player1tileking, offset: [50,50]});    
+            }
+            else
+            {
+                console.log('p1');
+                tile.setFill({image: images.player1tile, offset: [0,0]});                
+            }
         }
         else
         {
-            console.log('p2');
-            tile.setFill({image: images.player2tile, offset: [0,0]});                
-        }        
+            if(actor.attrs.king)
+            {
+                console.log('p2king');
+                tile.setFill({image: images.player2tileking, offset: [50,50]});    
+            }
+            else
+            {
+                console.log('p2');
+                tile.setFill({image: images.player2tile, offset: [0,0]});                
+            }        
+        }
     }
     
     board.draw();    
@@ -284,18 +330,10 @@ function colorSelected(actor)
     console.log(actor);
     
     var tile=getTile(actor.attrs.hexX, actor.attrs.hexY);
-    if(actor.attrs.player==1)
-    {
-        tile.setFill({image: images.player1tileselected, offset: [0,0]});
-    }
-    else
-    {
-        tile.setFill({image: images.player2tileselected, offset: [0,0]});        
-    }
+    colorSelectedTile(actor, tile, true);
 
     console.log('coloring moves');
     console.log(actor);
-
     
     for(var x=0; x<actor.attrs.moves.length; x++)
     {
@@ -308,18 +346,58 @@ function colorSelected(actor)
         var yoff=move[1];
         
         tile=getTile(actor.attrs.hexX+xoff, actor.attrs.hexY+yoff);        
-        
-        if(actor.attrs.player==1)
+
+        if(tile!=null)
         {
-            tile.setFill({image: images.player1tileselected, offset: [0,0]});
+            colorSelectedTile(actor, tile, false);        
         }
-        else
-        {
-            tile.setFill({image: images.player2tileselected, offset: [0,0]});        
-        }        
     }
     
     board.draw();
+}
+
+function colorSelectedTile(actor, tile, central)
+{
+    console.log('colorSelectedTile');
+    
+    var enemy=getActor(tile.attrs.hexX, tile.attrs.hexY);
+
+    if(enemy!=null && enemy.attrs.player!=actor.attrs.player)
+    {
+        if(actor.attrs.player==1)
+        {
+            tile.setFill({image: images.player1death, offset: [0,0]});                    
+        }
+        else
+        {
+            tile.setFill({image: images.player2death, offset: [0,0]});                                
+        }
+    }   
+    else if(enemy==null || (enemy.attrs.player==actor.attrs.player && central))
+    { 
+        if(actor.attrs.player==1)
+        {
+            if(actor.attrs.king && central)
+            {
+                tile.setFill({image: images.player1tileselectedking, offset: [50,50]});
+            }
+            else
+            {
+                tile.setFill({image: images.player1tileselected, offset: [0,0]});            
+            }
+        }
+        else
+        {
+            if(actor.attrs.king && central)
+            {
+                tile.setFill({image: images.player2tileselectedking, offset: [50,50]});        
+            }
+            else
+            {
+                tile.setFill({image: images.player2tileselected, offset: [0,0]});                    
+            }
+        }    
+    }
 }
 
 function movePiece(tile)
@@ -380,8 +458,52 @@ function movePiece(tile)
 function getTile(x, y)
 {
     console.log('getTile: '+x+' '+y);
-    var boardRow=boardObjects[y];
-    return boardRow[x];
+    if(y<boardObjects.length)
+    {
+        var boardRow=boardObjects[y];
+        if(x<boardRow.length)
+        {
+            return boardRow[x];
+        }
+        else
+        {
+            return null;
+        }
+    }
+    else
+    {
+        return null;
+    }
+}
+
+function getActor(x, y)
+{
+    for(var i=0; i<actorObjects.length; i++)
+    {
+        var actor=actorObjects[i];
+        if(actor.attrs.hexX==x && actor.attrs.hexY==y)
+        {
+            return actor;
+        }
+    }
+
+    return null;
+}
+
+function redrawBoard()
+{
+    for(var y=0; y<boardSize*2-1; y++)
+    {    
+        var boardRow=boardObjects[y];
+        for(var x=0; x<boardRow.length; x++)
+        {                    
+            var tile=boardRow[x];
+            var actor=getActor(x, y);
+            console.log('actor for '+x+' '+y+' '+actor);
+            
+            colorTile(actor, tile);
+        }
+    }
 }
 
 function precalculateOffsets()
@@ -528,8 +650,8 @@ function initStage(imageAssets, audioAssets)
 
     var stage=new Kinetic.Stage({
         container: 'container',
-        width: 640,
-        height: 480,
+        width: stageWidth,
+        height: stageHeight,
     });
 
     initBackground(stage);    
@@ -543,6 +665,7 @@ function initLumpySpaceChess()
     mode=SELECT;
 
     var imageSources={
+        background: 'assets/lumpspace.png',
         jake: 'assets/jake.png',
         finn: 'assets/fin.png',
         lsp: 'assets/LSP.png',
@@ -552,12 +675,16 @@ function initLumpySpaceChess()
         ladyrain: 'assets/ladyrain.png',
         bubblegum: 'assets/princess.png',
         defaultTile: 'assets/tile.png',
+        player1death: 'assets/deathTile2.png',
+        player2death: 'assets/deathTile.png',
         player1tile: 'assets/player1tile.png',
         player2tile: 'assets/player2tile.png',
         player1tileking: 'assets/player1tileking.png',
         player2tileking: 'assets/player2tileking.png',
         player1tileselected: 'assets/player1tileselected.png',
         player2tileselected: 'assets/player2tileselected.png',
+        player1tileselectedking: 'assets/player1tileselectedking.png',
+        player2tileselectedking: 'assets/player2tileselectedking.png',
     };
     
 /*
