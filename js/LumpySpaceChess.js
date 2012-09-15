@@ -298,9 +298,9 @@ function initStage(images, audio)
 function initLumpySpaceChess()
 {
     var images={
-        jake: 'Assets/jake.png',
-        finn: 'Assets/fin.png',
-        lsp: 'Assets/LSP.png',
+        jake: 'assets/jake.png',
+        finn: 'assets/fin.png',
+        lsp: 'assets/LSP.png',
     };
     
 /*
