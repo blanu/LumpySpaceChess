@@ -4,6 +4,55 @@ var hexSize=50;
 var actors;
 var actorObjects=[];
 
+var boardObjects=[];
+
+var pieces;
+var pieceObjects=[];
+
+var characters={
+    jake: {
+        x: 0,
+        y: 0,
+    },
+    finn: {
+        x: 0,
+        y: 100,        
+    },
+    lsp: {
+        x: 0,
+        y: 200,        
+    },
+}
+
+var animations={
+    bounce: [
+        {
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+        },
+        {
+            x: 100,
+            y: 0,
+            width: 100,
+            height: 100,
+        },
+        {
+            x: 200,
+            y: 0,
+            width: 100,
+            height: 100,
+        },
+        {
+            x: 300,
+            y: 0,
+            width: 100,
+            height: 100,
+        },            
+    ]   
+};
+
 function initBackground(stage)
 {
     var background=new Kinetic.Layer();
@@ -30,6 +79,8 @@ function initBoard(stage)
     for(var y=0; y<boardSize*2-1; y++)
     {    
         console.log('offset: '+offset);
+        var boardRow=[];
+        boardObjects.push(boardRow);
         for(var x=0; x<rowLength; x++)
         {                
 /*
@@ -113,10 +164,51 @@ function initBoard(stage)
     stage.add(board);    
 }
 
-function initActors(stage)
+function initPieces(stage, images)
+{
+   pieces=new Kinetic.Layer();
+   
+   for(character in characters)
+   {
+       var coords=characters[character];
+    
+        var charObj=new Kinetic.Sprite({
+            x: coords.x,
+            y: coords.y,
+            image: images[character],
+            animations: animations,
+            animation: 'bounce',
+            frameRate: 10,
+        });
+    
+    /*
+       player.on('click', function() {
+           console.log('clicked actor');
+           console.log(this);
+           
+           var x=this.attrs.hexX;
+           var y=this.attrs.hexY;
+           
+           log('I am at '+x+' '+y);
+        });                
+    */
+    
+        charObj.setAnimation('bounce');
+    
+       pieces.add(charObj);
+       pieceObjects.push(charObj);   
+        
+       stage.add(pieces);
+       
+        charObj.start();       
+    }
+}
+
+function initActors(stage, images)
 {
    actors=new Kinetic.Layer();
     
+/*
    var player=new Kinetic.Circle({
        hexX: 0,
        hexY: 0,
@@ -127,16 +219,66 @@ function initActors(stage)
        stroke: 'gray',
        strokeWidth: 2,
    });
+*/
+
+    var animations={
+        bounce: [
+            {
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+            },
+            {
+                x: 100,
+                y: 0,
+                width: 100,
+                height: 100,
+            },
+            {
+                x: 200,
+                y: 0,
+                width: 100,
+                height: 100,
+            },
+            {
+                x: 300,
+                y: 0,
+                width: 100,
+                height: 100,
+            },            
+        ]   
+    };
+
+    var player=new Kinetic.Sprite({
+        hexX: 0,
+        hexY: 0,
+        x: 240,
+        y: 240,
+        image: images.jake,
+        animations: animations,
+        animation: 'bounce',
+        frameRate: 10,
+    });
 
    player.on('click', function() {
        console.log('clicked actor');
        console.log(this);
+       
+       var x=this.attrs.hexX;
+       var y=this.attrs.hexY;
+       
+       log('I am at '+x+' '+y);
     });                
+
+    player.setAnimation('bounce');
 
    actors.add(player);
    actorObjects.push(player);   
     
    stage.add(actors);
+   
+    player.start();   
 }
 
 function initStage(images, audio)
@@ -149,22 +291,26 @@ function initStage(images, audio)
 
     initBackground(stage);    
     initBoard(stage);
-    initActors(stage);
+    initPieces(stage, images);
+    initActors(stage, images);
 } 
 
 function initLumpySpaceChess()
 {
     var images={
-        beach: 'beach.png',
+        jake: 'Assets/jake.png',
+        finn: 'Assets/fin.png',
+        lsp: 'Assets/LSP.png',
     };
     
+/*
     var audio={
         beach: 'beach.png',
     };
+*/
     
 //    loadAssets(images, audio, initStage);
-
-    initStage({}, {});
+    loadAssets(images, [], initStage);
 }
 
 $(document).ready(initLumpySpaceChess);

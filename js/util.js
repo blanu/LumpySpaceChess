@@ -29,7 +29,7 @@ function loadAssets(sources, audioSources, callback)
         images[asset].src=sources[asset];
     }
     
-    for(asset in sources)
+    for(asset in audioSources)
     {
         images[asset]=new Audio();
         images[asset].onload=function() {
