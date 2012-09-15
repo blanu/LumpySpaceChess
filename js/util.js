@@ -31,8 +31,10 @@ function loadAssets(sources, audioSources, callback)
     
     for(asset in audioSources)
     {
-        images[asset]=new Audio();
-        images[asset].onload=function() {
+        console.log('loading '+asset);
+        audio[asset]=new Audio();
+        audio[asset].onload=function() {
+            console.log('audio onload');
             loaded++;
             if(loaded==toLoad)
             {
@@ -40,6 +42,7 @@ function loadAssets(sources, audioSources, callback)
             }
         }
         
-        images[asset].src=sources[asset];
+        audio[asset].src=audioSources[asset];
+        console.log(audio);
     }    
 }

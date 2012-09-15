@@ -283,10 +283,6 @@ function placePiece(tile)
 
 function colorTile(actor, tile)
 {
-    console.log('colorTile');
-    console.log(actor);
-    console.log(tile);
-    
     if(actor==null)
     {
         tile.setFill({image: images.defaultTile, offset: [50,50]});    
@@ -297,12 +293,10 @@ function colorTile(actor, tile)
         {
             if(actor.attrs.king)
             {
-                console.log('p1king');
                 tile.setFill({image: images.player1tileking, offset: [50,50]});    
             }
             else
             {
-                console.log('p1');
                 tile.setFill({image: images.player1tile, offset: [0,0]});                
             }
         }
@@ -310,12 +304,10 @@ function colorTile(actor, tile)
         {
             if(actor.attrs.king)
             {
-                console.log('p2king');
                 tile.setFill({image: images.player2tileking, offset: [50,50]});    
             }
             else
             {
-                console.log('p2');
                 tile.setFill({image: images.player2tile, offset: [0,0]});                
             }        
         }
@@ -403,8 +395,6 @@ function colorSelectedTile(actor, tile, central)
 function movePiece(tile)
 {
     console.log('movePiece');
-    console.log(selected);
-    console.log(boardObjects);
     
     if(selected==null)
     {
@@ -415,6 +405,22 @@ function movePiece(tile)
     {
         console.log('Cheater move, not current player '+selected.attrs.player+' '+player);
         return;
+    }
+
+    var attacking=false;    
+    var enemy=getActor(tile.attrs.hexX, tile.attrs.hexY);
+    if(enemy!=null)
+    {
+        if(enemy.attrs.player==selected.attrs.player)
+        {
+            console.log("can't capture your own piece");
+            return;
+        }
+        else
+        {
+            attacking=true;
+            console.log('attacking!');
+        }
     }
 
     console.log('coloring tile:');
@@ -440,7 +446,7 @@ function movePiece(tile)
     var x=calculateActorX(xpos, ypos);
     var y=calculateActorY(ypos);
     
-    console.log('moving '+xpos+' '+ypos+' '+selected);
+    console.log('moving '+xpos+' '+ypos);
         
     selected.attrs.hexX=tile.attrs.hexX;
     selected.attrs.hexY=tile.attrs.hexY;
@@ -450,6 +456,18 @@ function movePiece(tile)
         y: y,
         duration: 0.5, 
     });
+        
+    if(attacking)
+    {
+        console.log('attacking...');
+        console.log(enemy);
+        enemy.attrs.visible=false;
+        actors.draw();
+        if(enemy.attrs.king)
+        {
+            window.location='winning.html';
+        }
+    }
         
     selected=null;
     nextPlayer();
@@ -481,7 +499,7 @@ function getActor(x, y)
     for(var i=0; i<actorObjects.length; i++)
     {
         var actor=actorObjects[i];
-        if(actor.attrs.hexX==x && actor.attrs.hexY==y)
+        if(actor.attrs.hexX==x && actor.attrs.hexY==y && actor.attrs.visible)
         {
             return actor;
         }
@@ -499,7 +517,6 @@ function redrawBoard()
         {                    
             var tile=boardRow[x];
             var actor=getActor(x, y);
-            console.log('actor for '+x+' '+y+' '+actor);
             
             colorTile(actor, tile);
         }
