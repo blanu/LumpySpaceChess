@@ -177,6 +177,18 @@ var p2MoneyText;
 var p1arrow;
 var p2arrow;
 
+var p1startTiles=[
+    [0,0],
+    [0,1],
+    [0,2],
+];
+
+var p2startTiles=[
+    [2,4],
+    [3,3],
+    [4,2],
+];        
+
 function nextPlayer()
 {
     if(player==1)
@@ -220,6 +232,13 @@ function initBackground(stage)
 function pieceClicked()
 {
     console.log('piece clicked');
+    
+    var actor=getActorByName(this.attrs.name);
+    if(actor!=null)
+    {
+        console.log('piece already in use');
+        return;
+    }
     
     if(player==1)
     {
@@ -265,7 +284,8 @@ function generateTreasure()
 {
     var r=Math.random()*4;
     console.log('random: '+r);
-    if(r>2)
+    if(r>0)
+//    if(r>2)
     {
         placeTreasure();
     }
@@ -346,8 +366,7 @@ function treasureClicked()
     
     if(mode==PLACE)
     {
-        console.log("can't place on a treasure");
-        return;
+        placePiece(tile);
     }
     else if(mode==MOVE)
     {
@@ -401,6 +420,12 @@ function placePiece(tile)
         return;
     }
     
+    if(!checkPlacement(tile))
+    {
+        console.log("can't place there");
+        return;
+    }
+    
     console.log(selected);
     
     playSound(selected);
@@ -432,6 +457,7 @@ function placePiece(tile)
     }    
         
     var actor=new Kinetic.Sprite({
+        name: selected.attrs.name,
         hexX: xpos,
         hexY: ypos,
         moves: selected.attrs.moves,
@@ -445,6 +471,8 @@ function placePiece(tile)
         animation: 'bounce',
         frameRate: 10,
     });
+    
+    selected.stop();
     
 /*
     console.log('new actor: '+actor.attrs.king);
@@ -466,7 +494,28 @@ function placePiece(tile)
     
     tile.attrs.player=player;
     
-    colorTile(actor, tile);    
+    colorTile(actor, tile);        
+    
+    var treasure=getTreasure(tile.attrs.hexX, tile.attrs.hexY);
+    if(treasure!=null)        
+    {
+        console.log('got treasure');
+        treasure.attrs.visible=false;
+        treasures.draw();
+        
+        if(player==1)
+        {
+            p1Money=p1Money+treasure.attrs.value;
+            p1MoneyText.setText('$'+p1Money);
+        }
+        else
+        {
+            p2Money=p2Money+treasure.attrs.value;                    
+            p2MoneyText.setText('$'+p2Money);
+        }
+        
+        barLayer.draw();        
+    }    
     
     nextPlayer();
     
@@ -513,19 +562,11 @@ function colorStartTiles()
     var startTiles;
     if(player==1)
     {
-        startTiles=[
-            [0,0],
-            [0,1],
-            [0,2],
-        ];
+        startTiles=p1startTiles;
     }
     else
     {
-        startTiles=[
-            [2,4],
-            [3,3],
-            [4,2],
-        ];        
+        startTiles=p2startTiles;
     }
     
     for(var i=0; i<startTiles.length; i++)
@@ -534,17 +575,56 @@ function colorStartTiles()
         console.log('tile:');
         console.log(tile);
         
-        if(player==1)
+        var actor=getActor(startTiles[i][0], startTiles[i][1]);
+        if(actor==null)
         {
-            tile.setFill({image: images.player1tile, offset:[0,0]});
-        }
-        else
-        {
-            tile.setFill({image: images.player2tile, offset:[0,0]});            
+            if(player==1)
+            {
+                tile.setFill({image: images.player1tile, offset:[0,0]});
+            }
+            else
+            {
+                tile.setFill({image: images.player2tile, offset:[0,0]});            
+            }
         }
     }
     
     board.draw();
+}
+
+function checkPlacement(tile)
+{
+    var x=tile.attrs.hexX;
+    var y=tile.attrs.hexY;
+
+    var actor=getActor(x, y);
+    if(actor!=null)
+    {
+        console.log('placement blocked');
+        return false;
+    }
+    
+    var startTiles;
+    if(player==1)
+    {
+        startTiles=p1startTiles;
+    }
+    else
+    {
+        startTiles=p2startTiles;
+    }
+    
+    for(var i=0; i<startTiles.length; i++)
+    {
+        if(startTiles[i][0]==x && startTiles[i][1]==y)
+        {
+            return true;
+        }
+    }
+
+    console.log('not in start tile list '+x+' '+y);
+    console.log(startTiles);    
+    return false;
 }
 
 function colorSelected(actor)
@@ -730,6 +810,10 @@ function movePiece(tile)
                     
                     enemy.attrs.visible=false;
                     actors.draw();
+                    
+                    var piece=getPieceByName(enemy.attrs.name);
+                    piece.start();
+                    
                     if(enemy.attrs.king)
                     {
                         if(player==1)
@@ -811,6 +895,34 @@ function getActor(x, y)
         if(actor.attrs.hexX==x && actor.attrs.hexY==y && actor.attrs.visible)
         {
             return actor;
+        }
+    }
+
+    return null;
+}
+
+function getActorByName(name)
+{
+    for(var i=0; i<actorObjects.length; i++)
+    {
+        var actor=actorObjects[i];
+        if(actor.attrs.name==name && actor.attrs.visible)
+        {
+            return actor;
+        }
+    }
+
+    return null;
+}
+
+function getPieceByName(name)
+{
+    for(var i=0; i<pieceObjects.length; i++)
+    {
+        var piece=pieceObjects[i];
+        if(piece.attrs.name==name && piece.attrs.visible)
+        {
+            return piece;
         }
     }
 
@@ -962,6 +1074,7 @@ function initPieces(stage)
        var coords=characters[character];
     
         var charObj=new Kinetic.Sprite({
+            name: character,
             x: coords.x,
             y: coords.y,
             moves: coords.moves,
@@ -1093,6 +1206,9 @@ function initSounds()
     }    
     console.log('loaded audio');
     console.log(characters);    
+    
+    var theme=new buzz.sound('assets/audio/beat.mp3');
+    theme.loop().play();
 }
 
 function initStage(imageAssets, audioAssets)
