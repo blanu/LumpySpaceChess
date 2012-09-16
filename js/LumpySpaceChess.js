@@ -860,7 +860,7 @@ function initLumpySpaceChess()
 
     var imageSources={
         background: 'assets/lumpspace.png',
-        coin: 'assets/final coin.png',
+        coin: 'assets/coin.png',
         chest: 'assets/treasure.png',
         jake: 'assets/jake.png',
         finn: 'assets/fin.png',
