@@ -30,12 +30,9 @@ var characters={
         x: pieceX*0+pieceXOffset,
         y: pieceY,
         moves: [
+            [2,0],
+            [-1,1],
             [-1,-1],
-            [0,-1],           
-            [-1,0],
-            [1,0],           
-            [1,1],
-            [0,1],           
         ],
     },
     finn: {
@@ -43,7 +40,9 @@ var characters={
         x: pieceX*1+pieceXOffset,
         y: pieceY,        
         moves: [
-            [1,0],
+            [-2,0],           
+            [1,1],           
+            [1,-1],           
         ],
     },
     lsp: {
@@ -51,7 +50,12 @@ var characters={
         x: pieceX*2+pieceXOffset,
         y: pieceY,        
         moves: [
-            [1,1],
+            [-3,-1],
+            [0,-2],
+            [3,-1],
+            [-3,1],
+            [0,2],
+            [3,1],
         ],        
     },
     bubblegum: {
@@ -59,25 +63,56 @@ var characters={
         x: pieceX*3+pieceXOffset,
         y: pieceY,
         moves: [
-            [-1,0],
+            [2,0],
+            [-2,0],           
+            [-1,1],
+            [1,1],           
+            [-1,-1],
+            [1,-1],           
         ],        
     },
     bmo: {
         cost: 7,
         x: pieceX*4+pieceXOffset,
         y: pieceY,
+        moves: [
+            [-2,0],
+            [-4,0],
+            [-6,0],
+            [-8,0],
+            [-10,0],
+            [2,0],
+            [4,0],
+            [6,0],
+            [8,0],
+            [10,0],
+        ],
     },
     loraine: {
         cost: 8,
         x: pieceX*5+pieceXOffset,
         y: pieceY,
+        moves: [
+            [0,0],
+        ],
     },
     ladyrain: {
         cost: 10,
         x: pieceX*6+pieceXOffset,
         y: pieceY,
         moves: [
-            [-1,0]
+            [2,0],
+            [-2,0],           
+            [-1,1],
+            [1,1],           
+            [-1,-1],
+            [1,-1],           
+            [-3,-1],
+            [0,-2],
+            [3,-1],
+            [-3,1],
+            [0,2],
+            [3,1],            
         ],        
     },
     snail: {
@@ -168,8 +203,13 @@ var audio;
 
 var barLayer;
 
+/*
 var p1Money=1;
 var p2Money=1;
+*/
+
+var p1Money=100;
+var p2Money=100;
 
 var p1MoneyText;
 var p2MoneyText;
@@ -178,15 +218,15 @@ var p1arrow;
 var p2arrow;
 
 var p1startTiles=[
-    [0,0],
-    [0,1],
+    [2,0],
+    [1,1],
     [0,2],
 ];
 
 var p2startTiles=[
-    [2,4],
-    [3,3],
-    [4,2],
+    [8,2],
+    [7,3],
+    [6,4],
 ];        
 
 function nextPlayer()
@@ -209,6 +249,41 @@ function nextPlayer()
     }
     
     generateTreasure();
+    
+    console.log('new loraine movement?');
+    var loraine=getActorByName('loraine');
+    if(loraine!=null)
+    {
+        console.log('new loraine movement!');
+        var tile=null;
+        while(tile==null)
+        {
+            var x=Math.floor(Math.random()*(boardSize+1)*2);
+            var y=Math.floor(Math.random()*boardSize*2);
+            tile=getTile(x, y);
+        }
+
+        console.log(x+' '+y+' '+loraine.attrs.hexX+' '+loraine.attrs.hexY);        
+        loraine.attrs.moves=[[x-loraine.attrs.hexX,y-loraine.attrs.hexY]];
+        console.log('moves:');
+        console.log(loraine.attrs.moves);
+    }
+    
+    console.log('new snail movement?');
+    var snail=getActorByName('snail');
+    if(snail!=null)
+    {
+        console.log('new snail movement!');
+        var tile=null;
+        while(tile==null)
+        {
+            var r=Math.floor(Math.random()*6);
+            var move=characters.bubblegum.moves[r];
+            tile=getTile(snail.attrs.hexX+move[0], snail.attrs.hexY+move[1]);
+        }
+
+        snail.attrs.moves=[move];
+    }    
 }
 
 function initBackground(stage)
@@ -285,7 +360,6 @@ function generateTreasure()
     var r=Math.random()*4;
     console.log('random: '+r);
     if(r>0)
-//    if(r>2)
     {
         placeTreasure();
     }
@@ -304,6 +378,14 @@ function placeTreasure()
     var tile=boardRow[x];
     console.log('candidate:');
     console.log(tile);
+    
+    var tile=getTile(x, y);
+    if(tile==null)
+    {
+        console.log('no tile to place treasure');
+        return;
+    }
+    
     var actor=getActor(x, y);
     if(actor!=null)
     {
@@ -572,7 +654,7 @@ function colorStartTiles()
     for(var i=0; i<startTiles.length; i++)
     {
         var tile=getTile(startTiles[i][0], startTiles[i][1]);
-        console.log('tile:');
+        console.log('tile '+startTiles[i][0]+' '+startTiles[i][1]+':');
         console.log(tile);
         
         var actor=getActor(startTiles[i][0], startTiles[i][1]);
@@ -951,9 +1033,13 @@ function redrawBoard()
         for(var x=0; x<boardRow.length; x++)
         {                    
             var tile=boardRow[x];
-            var actor=getActor(x, y);
             
-            colorTile(actor, tile);
+            if(tile!=null)
+            {
+                var actor=getActor(x, y);
+                
+                colorTile(actor, tile);
+            }
         }
     }
 }
@@ -969,11 +1055,9 @@ function precalculateOffsets()
         {
             offset--;
         }
-        else if(y==boardSize || y==boardSize+1)
-        {
-        }
         else
         {
+            offset++;
         }                
     }    
 }
@@ -981,7 +1065,7 @@ function precalculateOffsets()
 function calculateTileX(x, y)
 {
     var offset=offsets[y];
-    return 50+(x*hexSize*1.8)+(((hexSize/2)*y*1.8))+(offset*hexSize*1.8);
+    return 100+(x*(hexSize-5));
 }
 
 function calculateTileY(y)
@@ -1021,14 +1105,22 @@ function initBoard(stage)
     for(var y=0; y<boardSize*2-1; y++)
     {    
         var boardRow=[];
+        var offset=offsets[y];
+        
+        for(var i=0; i<offset; i++)
+        {
+            boardRow.push(null);
+        }
+        
         boardObjects.push(boardRow);
         for(var x=0; x<rowLength; x++)
         {                
-            var xpos=calculateTileX(x, y);
+            var adjx=(x*2)+offsets[y];
+            var xpos=calculateTileX(adjx, y);
             var ypos=calculateTileY(y);
             
             var tile=new Kinetic.RegularPolygon({
-                hexX: x,
+                hexX: adjx,
                 hexY: y,
                 player: 0,
                 x: xpos,
@@ -1046,6 +1138,7 @@ function initBoard(stage)
             tile.on('click', tileClicked);
             board.add(tile);
             boardRow.push(tile);
+            boardRow.push(null);
         }
         
         if(y<boardSize/2)
@@ -1207,8 +1300,8 @@ function initSounds()
     console.log('loaded audio');
     console.log(characters);    
     
-    var theme=new buzz.sound('assets/audio/beat.mp3');
-    theme.loop().play();
+ //   var theme=new buzz.sound('assets/audio/beat.mp3');
+ //   theme.loop().play();
 }
 
 function initStage(imageAssets, audioAssets)
