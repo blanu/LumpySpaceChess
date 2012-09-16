@@ -5,15 +5,19 @@ function loadAssets(sources, audioSources, callback)
     var asset;
     var images={};
     var audio={};
+            
+    for(asset in audioSources)
+    {
+        console.log('loading '+asset);
+        audio[asset]=new buzz.sound(audioSources[asset]);
+    }    
+    console.log('loaded audio');
+    console.log(audio);
     
     for(asset in sources)
     {
         toLoad++;
-    }
-    for(asset in audioSources)
-    {
-        toLoad++;
-    }        
+    }    
     
     for(asset in sources)
     {
@@ -27,22 +31,5 @@ function loadAssets(sources, audioSources, callback)
         }
         
         images[asset].src=sources[asset];
-    }
-    
-    for(asset in audioSources)
-    {
-        console.log('loading '+asset);
-        audio[asset]=new Audio();
-        audio[asset].onload=function() {
-            console.log('audio onload');
-            loaded++;
-            if(loaded==toLoad)
-            {
-                callback(images, audio);
-            }
-        }
-        
-        audio[asset].src=audioSources[asset];
-        console.log(audio);
     }    
 }

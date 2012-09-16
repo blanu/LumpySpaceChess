@@ -1,7 +1,7 @@
 function initWinning()
 {
     console.log('initWinning');
-    var theme=new buzz.sound('assets/rap.mp3');
+    var theme=new buzz.sound('assets/audio/rap.mp3');
     theme.play();
 }
 

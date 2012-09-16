@@ -20,10 +20,14 @@ var pieceObjects=[];
 var treatures;
 var treasureObjects=[];
 
+var pieceX=50;
+var pieceXOffset=130;
+var pieceY=420;
+
 var characters={
     jake: {
-        x: 0,
-        y: 0,
+        x: pieceX*0+pieceXOffset,
+        y: pieceY,
         moves: [
             [-1,-1],
             [0,-1],           
@@ -34,50 +38,48 @@ var characters={
         ],
     },
     finn: {
-        x: 0,
-        y: 100,        
+        x: pieceX*1+pieceXOffset,
+        y: pieceY,        
         moves: [
             [1,0],
         ],
     },
     lsp: {
-        x: 0,
-        y: 200,        
+        x: pieceX*2+pieceXOffset,
+        y: pieceY,        
         moves: [
             [1,1],
         ],        
     },
-    snail: {
-        x: 0,
-        y: 300,
-        moves: [
-            [0,-1],
-        ],        
-    },
-/*
-    bmo: {
-        x: 0,
-        y: 400,
-    },
-    loraine: {
-        x: 0,
-        y: 400,
-    }
-    ladyrain: {
-        x: 0,
-        y: 400,
-        moves: [
-            [-1,0]
-        ],        
-    },
-*/
     bubblegum: {
-        x: 0,
-        y: 400,
+        x: pieceX*3+pieceXOffset,
+        y: pieceY,
         moves: [
             [-1,0],
         ],        
     },
+    bmo: {
+        x: pieceX*4+pieceXOffset,
+        y: pieceY,
+    },
+    loraine: {
+        x: pieceX*5+pieceXOffset,
+        y: pieceY,
+    },
+    ladyrain: {
+        x: pieceX*6+pieceXOffset,
+        y: pieceY,
+        moves: [
+            [-1,0]
+        ],        
+    },
+    snail: {
+        x: pieceX*7+pieceXOffset,
+        y: pieceY,
+        moves: [
+            [0,-1],
+        ],        
+    },    
 }
 
 var animations={
@@ -153,6 +155,14 @@ var selected=null;
 var offsets=[];
 
 var showedSelected=false;
+
+var audio;
+
+var p1Money=0;
+var p2Money=0;
+
+var p1MoneyText;
+var p2MoneyText;
 
 function nextPlayer()
 {
@@ -248,12 +258,9 @@ function placeTreasure()
         return;
     }
     
-    x=0;
-    y=0;
-
     var treasureImage;    
     var value;
-    if(Math.random()*4>0)
+    if(Math.random()*4>2)
     {
         treasureImage=images.chest;
         value=5;
@@ -328,6 +335,8 @@ function placePiece(tile)
     
     console.log(selected);
     
+    playSound(selected);
+    
     var xpos=tile.attrs.hexX;
     var ypos=tile.attrs.hexY;
     
@@ -352,6 +361,7 @@ function placePiece(tile)
         moves: selected.attrs.moves,
         player: player,
         king: king,
+        sounds: selected.attrs.sounds,
         x: x,
         y: y,
         image: selected.attrs.image,
@@ -366,8 +376,8 @@ function placePiece(tile)
 */
     
    actor.on('click', actorClicked);                
-   actor.on('mouseover', actorMouseover);
-   actor.on('mouseout', actorMouseout);
+//   actor.on('mouseover', actorMouseover);
+//   actor.on('mouseout', actorMouseout);
 
    actors.add(actor);
    actorObjects.push(actor);   
@@ -457,6 +467,10 @@ function colorSelected(actor)
 function colorSelectedTile(actor, tile, central)
 {
     console.log('colorSelectedTile');
+    if(tile==null)
+    {
+        return null;
+    }
     
     var enemy=getActor(tile.attrs.hexX, tile.attrs.hexY);
 
@@ -512,6 +526,8 @@ function movePiece(tile)
         console.log('Cheater move, not current player '+selected.attrs.player+' '+player);
         return;
     }
+    
+    playSound(selected);
 
     var attacking=false;    
     var enemy=getActor(tile.attrs.hexX, tile.attrs.hexY);
@@ -606,6 +622,15 @@ function movePiece(tile)
             nextPlayer();            
         },
     });        
+}
+
+function playSound(actor)
+{
+    console.log('playSound');
+    console.log(actor);
+    var index=Math.floor(Math.random()*3);
+    var sound=actor.attrs.sounds[index];
+    sound.play();
 }
 
 function getTile(x, y)
@@ -791,10 +816,12 @@ function initPieces(stage)
             x: coords.x,
             y: coords.y,
             moves: coords.moves,
+            sounds: coords.sounds,
             image: images[character],
             animations: animations,
             animation: 'bounce',
             frameRate: 10,
+            scale: [0.5, 0.5],
         });
     
 /*
@@ -822,6 +849,43 @@ function initTreasures(stage)
     stage.add(treasures);
 }
 
+function initBar(stage)
+{
+    var barLayer=new Kinetic.Layer();
+    
+    var bar=new Kinetic.Image({
+        x: 0,
+        y: 432,
+        image: images.bar,
+    });     
+    
+    barLayer.add(bar);
+    
+    var p1MoneyText = new Kinetic.Text({
+      x: 42,
+      y: 454,
+      text: '$'+p1Money,
+      fontSize: 8,
+      fontFamily: 'Calibri',
+      textFill: 'white'
+    });
+    
+    barLayer.add(p1MoneyText);        
+
+    var p2MoneyText = new Kinetic.Text({
+      x: 585,
+      y: 454,
+      text: '$'+p1Money,
+      fontSize: 8,
+      fontFamily: 'Calibri',
+      textFill: 'white'
+    });
+    
+    barLayer.add(p2MoneyText);        
+    
+    stage.add(barLayer);
+}
+
 function initActors(stage)
 {
    actors=new Kinetic.Layer();
@@ -836,6 +900,22 @@ function initEffects(stage)
    stage.add(effects);   
 }
 
+function initSounds()
+{            
+    for(character in characters)
+    {
+        console.log('loading sound for '+character);
+        var charObj=characters[character];
+        charObj.sounds=[];
+        for(var i=0; i<3; i++)
+        {
+            charObj.sounds.push(new buzz.sound('assets/audio/'+character+i+'.mp3'));
+        }
+    }    
+    console.log('loaded audio');
+    console.log(characters);    
+}
+
 function initStage(imageAssets, audioAssets)
 {
     images=imageAssets;
@@ -846,7 +926,9 @@ function initStage(imageAssets, audioAssets)
         height: stageHeight,
     });
 
+    initSounds();
     initBackground(stage);    
+    initBar(stage);
     initBoard(stage);
     initPieces(stage);
     initTreasures(stage);
@@ -860,6 +942,7 @@ function initLumpySpaceChess()
 
     var imageSources={
         background: 'assets/lumpspace.png',
+        bar: 'assets/Bar.png',
         coin: 'assets/coin.png',
         chest: 'assets/treasure.png',
         jake: 'assets/jake.png',
@@ -884,11 +967,9 @@ function initLumpySpaceChess()
         player2tileselectedking: 'assets/player2tileselectedking.png',
     };
     
-/*
-    var audio={
-        beach: 'beach.png',
+    var audioSources={
+        
     };
-*/
     
     precalculateOffsets();
     
