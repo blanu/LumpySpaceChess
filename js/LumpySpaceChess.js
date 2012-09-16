@@ -261,6 +261,12 @@ function nextPlayer()
             var x=Math.floor(Math.random()*(boardSize+1)*2);
             var y=Math.floor(Math.random()*boardSize*2);
             tile=getTile(x, y);
+            
+            var actor=getActor(x, y);
+            if(actor!=null && loraine.attrs.player==actor.attrs.player)
+            {
+                tile=null;
+            }
         }
 
         console.log(x+' '+y+' '+loraine.attrs.hexX+' '+loraine.attrs.hexY);        
@@ -271,15 +277,25 @@ function nextPlayer()
     
     console.log('new snail movement?');
     var snail=getActorByName('snail');
+    tryCount=0;
     if(snail!=null)
     {
         console.log('new snail movement!');
         var tile=null;
-        while(tile==null)
+        while(tile==null && tryCount<6)
         {
-            var r=Math.floor(Math.random()*6);
-            var move=characters.bubblegum.moves[r];
-            tile=getTile(snail.attrs.hexX+move[0], snail.attrs.hexY+move[1]);
+            var move=characters.bubblegum.moves[tryCount];
+            var x=snail.attrs.hexX+move[0];
+            var y=snail.attrs.hexY+move[1];
+            tile=getTile(x, y);
+            
+            var actor=getActor(x, y);
+            if(actor!=null && snail.attrs.player==actor.attrs.player)
+            {
+                tile=null;
+            }            
+            
+            tryCount++;
         }
 
         snail.attrs.moves=[move];
@@ -463,6 +479,12 @@ function actorClicked()
     var x=this.attrs.hexX;
     var y=this.attrs.hexY;
     
+    if(this.attrs.player!=player)
+    {
+        console.log('not my turn');
+        return;
+    }
+    
     mode=MOVE;
     selected=this;
     
@@ -606,6 +628,8 @@ function placePiece(tile)
 
 function colorTile(actor, tile)
 {
+    tile.setStroke('gray');
+        
     if(actor==null)
     {
         tile.setFill({image: images.defaultTile, offset: [50,50]});    
@@ -783,6 +807,11 @@ function colorSelectedTile(actor, tile, central)
     { 
         if(actor.attrs.player==1)
         {
+            if(central)
+            {
+                tile.setStroke('black');
+            }
+        
             if(actor.attrs.king && central)
             {
                 tile.setFill({image: images.player1tileselectedking, offset: [50,50]});
@@ -794,6 +823,11 @@ function colorSelectedTile(actor, tile, central)
         }
         else
         {
+            if(central)
+            {
+                tile.setStroke('black');
+            }
+            
             if(actor.attrs.king && central)
             {
                 tile.setFill({image: images.player2tileselectedking, offset: [50,50]});        
