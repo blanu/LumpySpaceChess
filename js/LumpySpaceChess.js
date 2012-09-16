@@ -209,13 +209,13 @@ var audio;
 
 var barLayer;
 
-/*
 var p1Money=1;
 var p2Money=1;
-*/
 
+/*
 var p1Money=100;
 var p2Money=100;
+*/
 
 var p1MoneyText;
 var p2MoneyText;
