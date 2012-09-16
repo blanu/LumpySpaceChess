@@ -9,11 +9,16 @@ var images;
 var actors;
 var actorObjects=[];
 
+var effects;
+
 var board;
 var boardObjects=[];
 
 var pieces;
 var pieceObjects=[];
+
+var treatures;
+var treasureObjects=[];
 
 var characters={
     jake: {
@@ -104,6 +109,35 @@ var animations={
     ]   
 };
 
+var treasureAnimations={
+    sparkle: [
+        {
+            x: 0,
+            y: 0,
+            width: 75,
+            height: 75,
+        },
+        {
+            x: 75,
+            y: 0,
+            width: 75,
+            height: 75,
+        },
+        {
+            x: 150,
+            y: 0,
+            width: 75,
+            height: 75,
+        },
+        {
+            x: 225,
+            y: 0,
+            width: 75,
+            height: 75,
+        },            
+    ]
+};
+
 var SELECT=0;
 var PLACE=1;
 var MOVE=2;
@@ -130,6 +164,8 @@ function nextPlayer()
     {
         player=1;
     }
+    
+    generateTreasure();
 }
 
 function initBackground(stage)
@@ -173,6 +209,76 @@ function tileClicked()
     {
         movePiece(this);
     }
+}
+
+function generateTreasure()
+{
+    var r=Math.random()*3;
+    console.log('random: '+r);
+//    if(r>2)
+    if(r>0)
+    {
+        placeTreasure();
+    }
+    else
+    {
+        console.log('no treasure');
+    }
+}
+
+function placeTreasure()
+{
+    console.log('placeTreasure');
+    var y=Math.floor(Math.random()*boardObjects.length);
+    var boardRow=boardObjects[y];
+    var x=Math.floor(Math.random()*boardRow.length);
+    var tile=boardRow[x];
+    console.log('candidate:');
+    console.log(tile);
+    var actor=getActor(x, y);
+    if(actor!=null)
+    {
+        console.log('treasure blocked');
+        return;
+    }
+    var treasure=getTreasure(x, y);
+    if(treasure!=null)
+    {
+        console.log('already treasure');
+        return;
+    }
+    
+    x=0;
+    y=0;
+
+    var treasureImage;    
+    var value;
+    if(Math.random()*4>0)
+    {
+        treasureImage=images.chest;
+        value=5;
+    }
+    else
+    {
+        treasureImage=images.coin;
+        value=1;
+    }
+    
+    console.log('new treasure! '+x+' '+y);
+    treasure=new Kinetic.Sprite({
+        x: calculateTreasureX(x, y),
+        y: calculateTreasureY(y),
+        value: value,
+        image: treasureImage,
+        animations: treasureAnimations,
+        animation: 'sparkle',
+        frameRate: 10,
+    });
+    
+    treasures.add(treasure);
+    treasureObjects.push(treasure);
+    treasure.start();
+    treasures.draw();
 }
 
 function actorClicked()
@@ -454,32 +560,61 @@ function movePiece(tile)
     selected.transitionTo({
         x: x,
         y: y,
-        duration: 0.5, 
-    });
-        
-    if(attacking)
-    {
-        console.log('attacking...');
-        console.log(enemy);
-        enemy.attrs.visible=false;
-        actors.draw();
-        if(enemy.attrs.king)
-        {
-            window.location='winning.html';
-        }
-    }
-        
-    selected=null;
-    nextPlayer();
+        duration: 0.5,
+        callback: function() {
+            if(attacking)
+            {
+                console.log('attacking...');
+                console.log(enemy);
+                
+                var fight=new Kinetic.Sprite({
+                    x: x,
+                    y: y,
+                    image: images.fight,
+                    animations: animations,
+                    animation: 'bounce',
+                    frameRate: 10,                        
+                });
+
+                effects.add(fight);
+                effects.draw();
+                
+                fight.afterFrame(3, function () {
+                    fight.stop();
+                    fight.attrs.visible=false;
+                    effects.draw();
+                    
+                    enemy.attrs.visible=false;
+                    actors.draw();
+                    if(enemy.attrs.king)
+                    {
+                        if(player==1)
+                        {
+                            window.location='winning2.html';                            
+                        }
+                        else
+                        {                            
+                            window.location='winning1.html';
+                        }
+                    }                    
+                });
+                
+                fight.start();                
+            }
+                
+            selected=null;
+            nextPlayer();            
+        },
+    });        
 }
 
 function getTile(x, y)
 {
     console.log('getTile: '+x+' '+y);
-    if(y<boardObjects.length)
+    if(y>0 && y<boardObjects.length)
     {
         var boardRow=boardObjects[y];
-        if(x<boardRow.length)
+        if(x>0 && x<boardRow.length)
         {
             return boardRow[x];
         }
@@ -502,6 +637,20 @@ function getActor(x, y)
         if(actor.attrs.hexX==x && actor.attrs.hexY==y && actor.attrs.visible)
         {
             return actor;
+        }
+    }
+
+    return null;
+}
+
+function getTreasure(x, y)
+{
+    for(var i=0; i<treasureObjects.length; i++)
+    {
+        var treasure=treasureObjects[i];
+        if(treasure.attrs.hexX==x && treasure.attrs.hexY==y && treasure.attrs.visible)
+        {
+            return treasure;
         }
     }
 
@@ -564,6 +713,18 @@ function calculateActorY(y)
 {
     var ypos=calculateTileY(y);
     return ypos-90;
+}
+
+function calculateTreasureX(x, y)
+{
+    var xpos=calculateTileX(x, y);
+    return xpos-35;
+}
+
+function calculateTreasureY(y)
+{
+    var ypos=calculateTileY(y);
+    return ypos-37;
 }
 
 function initBoard(stage)
@@ -654,11 +815,25 @@ function initPieces(stage)
     }
 }
 
+function initTreasures(stage)
+{
+    treasures=new Kinetic.Layer();
+    
+    stage.add(treasures);
+}
+
 function initActors(stage)
 {
    actors=new Kinetic.Layer();
     
    stage.add(actors);   
+}
+
+function initEffects(stage)
+{
+   effects=new Kinetic.Layer();
+    
+   stage.add(effects);   
 }
 
 function initStage(imageAssets, audioAssets)
@@ -674,7 +849,9 @@ function initStage(imageAssets, audioAssets)
     initBackground(stage);    
     initBoard(stage);
     initPieces(stage);
+    initTreasures(stage);
     initActors(stage);
+    initEffects(stage);    
 } 
 
 function initLumpySpaceChess()
@@ -683,6 +860,8 @@ function initLumpySpaceChess()
 
     var imageSources={
         background: 'assets/lumpspace.png',
+        coin: 'assets/final coin.png',
+        chest: 'assets/treasure.png',
         jake: 'assets/jake.png',
         finn: 'assets/fin.png',
         lsp: 'assets/LSP.png',
@@ -691,6 +870,7 @@ function initLumpySpaceChess()
         loraine: 'assets/Loraine.png',
         ladyrain: 'assets/ladyrain.png',
         bubblegum: 'assets/princess.png',
+        fight: 'assets/death.png',
         defaultTile: 'assets/tile.png',
         player1death: 'assets/deathTile2.png',
         player2death: 'assets/deathTile.png',
