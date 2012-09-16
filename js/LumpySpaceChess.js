@@ -26,6 +26,7 @@ var pieceY=420;
 
 var characters={
     jake: {
+        cost: 1,
         x: pieceX*0+pieceXOffset,
         y: pieceY,
         moves: [
@@ -38,6 +39,7 @@ var characters={
         ],
     },
     finn: {
+        cost: 1,
         x: pieceX*1+pieceXOffset,
         y: pieceY,        
         moves: [
@@ -45,6 +47,7 @@ var characters={
         ],
     },
     lsp: {
+        cost: 2,
         x: pieceX*2+pieceXOffset,
         y: pieceY,        
         moves: [
@@ -52,6 +55,7 @@ var characters={
         ],        
     },
     bubblegum: {
+        cost: 5,
         x: pieceX*3+pieceXOffset,
         y: pieceY,
         moves: [
@@ -59,14 +63,17 @@ var characters={
         ],        
     },
     bmo: {
+        cost: 7,
         x: pieceX*4+pieceXOffset,
         y: pieceY,
     },
     loraine: {
+        cost: 8,
         x: pieceX*5+pieceXOffset,
         y: pieceY,
     },
     ladyrain: {
+        cost: 10,
         x: pieceX*6+pieceXOffset,
         y: pieceY,
         moves: [
@@ -74,6 +81,7 @@ var characters={
         ],        
     },
     snail: {
+        cost: 20,
         x: pieceX*7+pieceXOffset,
         y: pieceY,
         moves: [
@@ -158,21 +166,34 @@ var showedSelected=false;
 
 var audio;
 
-var p1Money=0;
-var p2Money=0;
+var barLayer;
+
+var p1Money=1;
+var p2Money=1;
 
 var p1MoneyText;
 var p2MoneyText;
+
+var p1arrow;
+var p2arrow;
 
 function nextPlayer()
 {
     if(player==1)
     {
         player=2;
+        
+        p1arrow.attrs.visible=false;
+        p2arrow.attrs.visible=true;
+        barLayer.draw();
     }
     else
     {
         player=1;
+        
+        p1arrow.attrs.visible=true;
+        p2arrow.attrs.visible=false;
+        barLayer.draw();        
     }
     
     generateTreasure();
@@ -200,6 +221,25 @@ function pieceClicked()
 {
     console.log('piece clicked');
     
+    if(player==1)
+    {
+        if(this.attrs.cost>p1Money)
+        {
+            console.log('too expensive');
+            return;
+        }
+    }
+    else
+    {
+        if(this.attrs.cost>p2Money)
+        {
+            console.log('too expensive');
+            return;
+        }        
+    }
+    
+    colorStartTiles();
+    
     mode=PLACE;
     selected=this;
 }
@@ -223,10 +263,9 @@ function tileClicked()
 
 function generateTreasure()
 {
-    var r=Math.random()*3;
+    var r=Math.random()*4;
     console.log('random: '+r);
-//    if(r>2)
-    if(r>0)
+    if(r>2)
     {
         placeTreasure();
     }
@@ -273,6 +312,8 @@ function placeTreasure()
     
     console.log('new treasure! '+x+' '+y);
     treasure=new Kinetic.Sprite({
+        hexX: x,
+        hexY: y,
         x: calculateTreasureX(x, y),
         y: calculateTreasureY(y),
         value: value,
@@ -282,10 +323,36 @@ function placeTreasure()
         frameRate: 10,
     });
     
+    treasure.on('click', treasureClicked);
+    
     treasures.add(treasure);
     treasureObjects.push(treasure);
     treasure.start();
     treasures.draw();
+}
+
+function treasureClicked()
+{
+    var x=this.attrs.hexX;
+    var y=this.attrs.hexY;
+
+    var tile=getTile(x, y);
+    
+    console.log('treasure clicked '+this.attrs.hexX+' '+this.attrs.hexY);
+    console.log(tile);
+
+    console.log('redrawing');
+    redrawBoard();
+    
+    if(mode==PLACE)
+    {
+        console.log("can't place on a treasure");
+        return;
+    }
+    else if(mode==MOVE)
+    {
+        movePiece(tile);
+    }
 }
 
 function actorClicked()
@@ -300,6 +367,7 @@ function actorClicked()
     
     showedSelected=false;
     
+    redrawBoard();
     colorSelected(this);
 }
 
@@ -348,13 +416,21 @@ function placePiece(tile)
     {
         king=!p1KingPlaced;
         p1KingPlaced=true;
+        
+        p1Money=p1Money-selected.attrs.cost;
+        p1MoneyText.setText('$'+p1Money);
+        barLayer.draw();
     }
     else
     {
         king=!p2KingPlaced;
         p2KingPlaced=true;
+        
+        p2Money=p2Money-selected.attrs.cost;
+        p2MoneyText.setText('$'+p2Money);
+        barLayer.draw();
     }    
-    
+        
     var actor=new Kinetic.Sprite({
         hexX: xpos,
         hexY: ypos,
@@ -430,6 +506,45 @@ function colorTile(actor, tile)
     }
     
     board.draw();    
+}
+
+function colorStartTiles()
+{
+    var startTiles;
+    if(player==1)
+    {
+        startTiles=[
+            [0,0],
+            [0,1],
+            [0,2],
+        ];
+    }
+    else
+    {
+        startTiles=[
+            [2,4],
+            [3,3],
+            [4,2],
+        ];        
+    }
+    
+    for(var i=0; i<startTiles.length; i++)
+    {
+        var tile=getTile(startTiles[i][0], startTiles[i][1]);
+        console.log('tile:');
+        console.log(tile);
+        
+        if(player==1)
+        {
+            tile.setFill({image: images.player1tile, offset:[0,0]});
+        }
+        else
+        {
+            tile.setFill({image: images.player2tile, offset:[0,0]});            
+        }
+    }
+    
+    board.draw();
 }
 
 function colorSelected(actor)
@@ -529,6 +644,7 @@ function movePiece(tile)
     
     playSound(selected);
 
+    var gettingTreasure=false;
     var attacking=false;    
     var enemy=getActor(tile.attrs.hexX, tile.attrs.hexY);
     if(enemy!=null)
@@ -544,7 +660,18 @@ function movePiece(tile)
             console.log('attacking!');
         }
     }
+    
+    if(!attacking)
+    {
+        var treasure=getTreasure(tile.attrs.hexX, tile.attrs.hexY);
+        if(treasure!=null)        
+        {
+            console.log('found treasure');
+            gettingTreasure=true;
+        }
+    }
 
+/*
     console.log('coloring tile:');
     console.log(tile.attrs.hexX+' '+tile.attrs.hexY);    
     var newTile=getTile(tile.attrs.hexX, tile.attrs.hexY);
@@ -561,6 +688,7 @@ function movePiece(tile)
     });
     
     board.draw();
+*/
     
     var xpos=tile.attrs.hexX;
     var ypos=tile.attrs.hexY;
@@ -617,6 +745,27 @@ function movePiece(tile)
                 
                 fight.start();                
             }
+            else if(gettingTreasure)
+            {
+                console.log('got treasure');
+                treasure.attrs.visible=false;
+                treasures.draw();
+                
+                if(player==1)
+                {
+                    p1Money=p1Money+treasure.attrs.value;
+                    p1MoneyText.setText('$'+p1Money);
+                }
+                else
+                {
+                    p2Money=p2Money+treasure.attrs.value;                    
+                    p2MoneyText.setText('$'+p2Money);
+                }
+                
+                barLayer.draw();
+            }
+            
+            redrawBoard();
                 
             selected=null;
             nextPlayer();            
@@ -636,10 +785,10 @@ function playSound(actor)
 function getTile(x, y)
 {
     console.log('getTile: '+x+' '+y);
-    if(y>0 && y<boardObjects.length)
+    if(y>=0 && y<boardObjects.length)
     {
         var boardRow=boardObjects[y];
-        if(x>0 && x<boardRow.length)
+        if(x>=0 && x<boardRow.length)
         {
             return boardRow[x];
         }
@@ -817,6 +966,7 @@ function initPieces(stage)
             y: coords.y,
             moves: coords.moves,
             sounds: coords.sounds,
+            cost: coords.cost,
             image: images[character],
             animations: animations,
             animation: 'bounce',
@@ -851,7 +1001,7 @@ function initTreasures(stage)
 
 function initBar(stage)
 {
-    var barLayer=new Kinetic.Layer();
+    barLayer=new Kinetic.Layer();
     
     var bar=new Kinetic.Image({
         x: 0,
@@ -861,7 +1011,7 @@ function initBar(stage)
     
     barLayer.add(bar);
     
-    var p1MoneyText = new Kinetic.Text({
+    p1MoneyText = new Kinetic.Text({
       x: 42,
       y: 454,
       text: '$'+p1Money,
@@ -872,7 +1022,7 @@ function initBar(stage)
     
     barLayer.add(p1MoneyText);        
 
-    var p2MoneyText = new Kinetic.Text({
+    p2MoneyText = new Kinetic.Text({
       x: 585,
       y: 454,
       text: '$'+p1Money,
@@ -882,6 +1032,35 @@ function initBar(stage)
     });
     
     barLayer.add(p2MoneyText);        
+    
+    p1arrow=new Kinetic.Sprite({
+        x: 25,
+        y: 382,
+        image: images.arrow,
+        animations: animations,
+        animation: 'bounce',
+        frameRate: 10,
+        scale: [0.5, 0.5],
+    });
+    
+    barLayer.add(p1arrow);
+    
+    p1arrow.start();
+
+    p2arrow=new Kinetic.Sprite({
+        x: 565,
+        y: 382,
+        image: images.arrow,
+        animations: animations,
+        animation: 'bounce',
+        frameRate: 10,
+        scale: [0.5, 0.5],
+        visible: false,
+    });
+    
+    barLayer.add(p2arrow);
+    
+    p2arrow.start();
     
     stage.add(barLayer);
 }
@@ -943,6 +1122,7 @@ function initLumpySpaceChess()
     var imageSources={
         background: 'assets/lumpspace.png',
         bar: 'assets/Bar.png',
+        arrow: 'assets/go.png',
         coin: 'assets/coin.png',
         chest: 'assets/treasure.png',
         jake: 'assets/jake.png',
