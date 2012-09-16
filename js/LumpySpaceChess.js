@@ -709,6 +709,23 @@ function checkPlacement(tile)
     return false;
 }
 
+function checkMove(actor, tile)
+{
+    var x=actor.attrs.hexX;
+    var y=actor.attrs.hexY;
+    
+    for(var i=0; i<actor.attrs.moves.length; i++)
+    {
+        var move=actor.attrs.moves[i];
+        if(tile.attrs.hexX==x+move[0] && tile.attrs.hexY==y+move[1])
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 function colorSelected(actor)
 {
     console.log('colorSelected');
@@ -801,6 +818,12 @@ function movePiece(tile)
     if(selected.attrs.player!=player)
     {
         console.log('Cheater move, not current player '+selected.attrs.player+' '+player);
+        return;
+    }
+    
+    if(!checkMove(selected, tile))
+    {
+        console.log('invalid move');
         return;
     }
     
