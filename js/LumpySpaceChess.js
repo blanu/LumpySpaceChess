@@ -203,13 +203,13 @@ var audio;
 
 var barLayer;
 
-/*
 var p1Money=1;
 var p2Money=1;
-*/
 
+/*
 var p1Money=100;
 var p2Money=100;
+*/
 
 var p1MoneyText;
 var p2MoneyText;
@@ -1357,8 +1357,8 @@ function initSounds()
     console.log('loaded audio');
     console.log(characters);    
     
- //   var theme=new buzz.sound('assets/audio/beat.mp3');
- //   theme.loop().play();
+    var theme=new buzz.sound('assets/audio/beat.mp3');
+    theme.loop().play();
 }
 
 function initStage(imageAssets, audioAssets)
