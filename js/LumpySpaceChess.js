@@ -31,8 +31,11 @@ var characters={
         y: pieceY,
         moves: [
             [2,0],
+            [-2,0],           
             [-1,1],
+            [1,1],           
             [-1,-1],
+            [1,-1],           
         ],
     },
     finn: {
@@ -40,9 +43,12 @@ var characters={
         x: pieceX*1+pieceXOffset,
         y: pieceY,        
         moves: [
+            [2,0],
             [-2,0],           
+            [-1,1],
             [1,1],           
-            [1,-1],           
+            [-1,-1],
+            [1,-1],                   
         ],
     },
     lsp: {
@@ -63,12 +69,12 @@ var characters={
         x: pieceX*3+pieceXOffset,
         y: pieceY,
         moves: [
-            [2,0],
             [-2,0],           
-            [-1,1],
+            [-4,0],
             [1,1],           
-            [-1,-1],
+            [2,2],
             [1,-1],           
+            [2,-2],
         ],        
     },
     bmo: {
@@ -203,13 +209,13 @@ var audio;
 
 var barLayer;
 
+/*
 var p1Money=1;
 var p2Money=1;
+*/
 
-/*
 var p1Money=100;
 var p2Money=100;
-*/
 
 var p1MoneyText;
 var p2MoneyText;
@@ -278,13 +284,21 @@ function nextPlayer()
     console.log('new snail movement?');
     var snail=getActorByName('snail');
     tryCount=0;
+    var moves=[
+        [2,0],
+        [-1,1],
+        [1,1],           
+        [-2,0],           
+        [-1,-1],
+        [1,-1],           
+    ];
     if(snail!=null)
     {
         console.log('new snail movement!');
         var tile=null;
         while(tile==null && tryCount<6)
         {
-            var move=characters.bubblegum.moves[tryCount];
+            var move=moves[tryCount];
             var x=snail.attrs.hexX+move[0];
             var y=snail.attrs.hexY+move[1];
             tile=getTile(x, y);
