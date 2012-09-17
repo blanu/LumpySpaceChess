@@ -495,8 +495,21 @@ function actorClicked()
     
     if(this.attrs.player!=player)
     {
-        console.log('not my turn');
-        return;
+        if(selected==null)
+        {
+            console.log('not my turn');
+            return;
+        }
+        else if(mode==PLACE)
+        {
+            console.log('space occupred, cannot place');
+            return;
+        }
+        else
+        {
+            var tile=getTile(this.attrs.hexX, this.attrs.hexY);
+            movePiece(tile);
+        }
     }
     
     mode=MOVE;
